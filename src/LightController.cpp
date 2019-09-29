@@ -21,14 +21,6 @@ class LightController {
       this->pLight = pLight;
     }
 
-    void set(ColorName color) {
-      this->pLight->set(color);
-
-      this->intensity = 1;
-      this->color = color;
-      this->isOn = true;
-    }
-
     void set(ColorName color, float intensity) {
       this->pLight->set(color, intensity);
 

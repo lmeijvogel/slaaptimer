@@ -20,6 +20,9 @@ using namespace std;
 using namespace Color;
 using namespace LightState;
 
+const long oneHour = 60 * 60 * 1000;
+const long twelveHours = 12 * oneHour;
+
 class LightStateMachine {
   public:
   LightStateMachine(shared_ptr<LightController> lightController) {
@@ -65,17 +68,16 @@ class LightStateMachine {
 
     ColorName color = colorForState(alarmState);
 
-    lightController->set(color);
+    lightController->set(color, 1.0);
   }
 
-  void buttonPressed(TimeTools::Time &time) {
+  void toggleLight(long currentTimeMillis) {
     switch (this->alarmState) {
       case AlarmState::State::Off:
+        this->lightToggleTimeMillis = currentTimeMillis;
         toggleThreeState();
         break;
       case AlarmState::State::Prepare:
-        toggleTwoState();
-        break;
       case AlarmState::State::On:
         toggleTwoState();
         break;
@@ -84,12 +86,43 @@ class LightStateMachine {
     this->applyState();
   }
 
-  void buttonLongPress(long currentTimeMillis) {
-    this->lightBlinker->start(ColorName::Yellow, 2, currentTimeMillis);
+  // The current time is necessary to time the blinks
+  void toggleAutoOff(long currentTimeMillis) {
+    ColorName blinkColor;
+
+    if (this->autoOff) {
+      blinkColor = Red;
+    } else {
+      blinkColor = Green;
+    }
+
+    this->lightBlinker->start(blinkColor, 2, currentTimeMillis);
+
+    this->autoOff = !this->autoOff;
+
+    this->autoOffSettingExpiryTimeMillis = currentTimeMillis + twelveHours;
+    this->lightToggleTimeMillis = currentTimeMillis;
   }
 
   void tick(long currentTimeMillis) {
+    // The autoOff setting is reset after this time
+    if (this->autoOffSettingExpiryTimeMillis < currentTimeMillis) {
+      this->autoOff = false;
+    }
+
+    long autoOffSettingRetentionTimeMillis = 12 * 60 * 60 * 1000;
+
     this->lightBlinker->tick(currentTimeMillis);
+
+    // Only turn off the light if it is Red, not when it's Yellow or Green since they
+    // have their own timers
+    if (this->alarmState == AlarmState::State::Off) {
+      if (this->autoOff && (this->lightToggleTimeMillis + oneHour < currentTimeMillis)) {
+        this->state = State::Off;
+
+        this->applyState();
+      }
+    }
   }
 
   private:
@@ -134,4 +167,8 @@ class LightStateMachine {
 
   State state;
   unique_ptr<LightBlinker> lightBlinker;
+
+  long lightToggleTimeMillis = 0;
+  long autoOffSettingExpiryTimeMillis = 0;
+  bool autoOff = false;
 };

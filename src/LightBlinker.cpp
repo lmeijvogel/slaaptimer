@@ -22,6 +22,10 @@ class LightBlinker {
     }
 
     void start(ColorName color, int times, long startingTimeMillis) {
+      if (this->isEnabled) {
+        return; // Don't start blinking twice to prevent loss of previous state
+      }
+
       this->startingTimeMillis = startingTimeMillis;
       this->blinksLeft = times;
       this->blinkColor = color;
@@ -31,12 +35,14 @@ class LightBlinker {
       this->lightController->turnOff();
 
       this->nextEventTimeMillis = startingTimeMillis + 250;
-      this->state = BlinkOff;
+
+      this->isEnabled = true;
+
       this->nextState = BlinkOn;
     }
 
     void tick(long currentTimeMillis) {
-      if (this->state == Off) {
+      if (!this->isEnabled) {
         return;
       }
 
@@ -46,9 +52,8 @@ class LightBlinker {
 
       switch (this->nextState) {
         case BlinkOn:
-            this->lightController->set(this->blinkColor);
+            this->lightController->set(this->blinkColor, 1.0);
 
-            this->state = BlinkOn;
             this->blinksLeft--;
 
             this->nextState = BlinkOff;
@@ -67,10 +72,9 @@ class LightBlinker {
 
           break;
         case Off:
-          this->state = Off;
-
           this->lightController->setState(this->beforeState);
           this->nextEventTimeMillis = 0;
+          this->isEnabled = false;
           break;
       }
     }
@@ -78,7 +82,7 @@ class LightBlinker {
   private:
     std::shared_ptr<LightController> lightController;
 
-    LightBlinkerState state = Off;
+    bool isEnabled = false;
 
     ColorName blinkColor = ColorName::None;
 

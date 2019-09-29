@@ -38,19 +38,22 @@ NCursesGui gui;
 shared_ptr<LightController> lightController;
 shared_ptr<LightStateMachine> lightStateMachine;
 
+int day = 0;
 int hour = 6;
 int minute = 0;
 
 void bumpTime(int numberOfMinutes) {
   minute += numberOfMinutes;
 
-  if (minute >= 60) {
+  while (minute >= 60) {
     minute -= 60;
     hour += 1;
   }
 
-  if (hour >= 24) {
+  while (hour >= 24) {
     hour -= 24;
+
+    day += 1;
   }
 }
 
@@ -65,10 +68,13 @@ int main() {
 
   bool running = true;
 
-  long loop = 0;
-
   while (running) {
-    int elapsedTimeMs = loop * 500000;
+    long oneMinute = 60*1000;
+
+    long hours = day * 24 + hour;
+    long minutes = hours * 60 + minute;
+
+    long  elapsedTimeMs = minutes * oneMinute;
 
     char timeString[6];
     sprintf(timeString, "%02d:%02d", hour, minute);
@@ -84,7 +90,6 @@ int main() {
     currentTime.hour = hour;
     currentTime.minute = minute;
 
-    /* How to distinguish between minute-ticks and program loop tick? */
     alarmStateMachine.setCurrentTime(currentTime);
     lightStateMachine->tick(elapsedTimeMs);
 
@@ -95,7 +100,11 @@ int main() {
         running = false;
         break;
       case 'z':
-        lightStateMachine->buttonLongPress(elapsedTimeMs);
+        lightStateMachine->toggleAutoOff(elapsedTimeMs);
+        break;
+      case 'r':
+        hour = 6;
+        minute = 20;
         break;
       case 's':
         bumpTime(10);
@@ -104,16 +113,14 @@ int main() {
         bumpTime(30);
         break;
       case 'f':
-        bumpTime(120);
+        bumpTime(60);
         break;
       case 'h':
-        bumpTime(360);
+        bumpTime(120);
         break;
-      case ' ':
-        lightStateMachine->buttonPressed(currentTime);
+      case ' ': // "Button press"
+        lightStateMachine->toggleLight(elapsedTimeMs);
         break;
     }
-
-    loop++;
   }
 }

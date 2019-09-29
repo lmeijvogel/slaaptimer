@@ -7,4 +7,4 @@ namespace Color {
     Yellow,
     Green
   };
-};
+}
