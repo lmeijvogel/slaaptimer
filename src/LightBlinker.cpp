@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include "Color.cpp"
 #include "LightController.cpp"
 #include "lib/TimeTools.cpp"
@@ -17,7 +15,7 @@ enum LightBlinkerState {
 
 class LightBlinker {
   public:
-    LightBlinker(std::shared_ptr<LightController> lightController) {
+    LightBlinker(LightController *lightController) {
       this->lightController = lightController;
     }
 
@@ -80,7 +78,7 @@ class LightBlinker {
     }
 
   private:
-    std::shared_ptr<LightController> lightController;
+    LightController *lightController;
 
     bool isEnabled = false;
 

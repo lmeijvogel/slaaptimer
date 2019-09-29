@@ -10,7 +10,7 @@ const TimeTools::Time OFF_TIME = { 8, 15 };
 
 class AlarmStateMachine {
   public:
-    AlarmStateMachine(shared_ptr<LightStateMachine> lightStateMachine) {
+    AlarmStateMachine(LightStateMachine *lightStateMachine) {
       this->lightStateMachine = lightStateMachine;
 
       this->setState(AlarmState::State::Off);
@@ -34,7 +34,7 @@ class AlarmStateMachine {
     }
 
   private:
-    shared_ptr<LightStateMachine> lightStateMachine;
+    LightStateMachine *lightStateMachine;
 
     void setState(AlarmState::State newState) {
       if (newState != this->state) {

@@ -1,12 +1,9 @@
 #pragma once
 
-#include <memory>
-
 #include "Color.cpp"
 #include "ILight.cpp"
 
 using namespace Color;
-using namespace std;
 
 struct LightControllerState {
   bool isOn;

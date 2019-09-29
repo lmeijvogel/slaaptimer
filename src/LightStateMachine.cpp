@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include "AlarmState.cpp"
 #include "Color.cpp"
 #include "LightBlinker.cpp"
@@ -25,9 +23,9 @@ const long twelveHours = 12 * oneHour;
 
 class LightStateMachine {
   public:
-  LightStateMachine(shared_ptr<LightController> lightController) {
+  LightStateMachine(LightController *lightController, LightBlinker *lightBlinker) {
     this->lightController = lightController;
-    this->lightBlinker = make_unique<LightBlinker>(lightController);
+    this->lightBlinker = lightBlinker;
   }
 
   void alarmStateChanged(AlarmState::State alarmState) {
@@ -161,12 +159,12 @@ class LightStateMachine {
     }
   }
 
-  shared_ptr<LightController> lightController;
+  LightController *lightController;
 
   AlarmState::State alarmState;
 
   State state;
-  unique_ptr<LightBlinker> lightBlinker;
+  LightBlinker *lightBlinker;
 
   long lightToggleTimeMillis = 0;
   long autoOffSettingExpiryTimeMillis = 0;

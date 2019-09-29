@@ -13,7 +13,7 @@
 
 #include "lib/TimeTools.cpp"
 
-string display(shared_ptr<LightController> lightController) {
+string display(LightController *lightController) {
   if (lightController->getIsOn()) {
     switch (lightController->getColor()) {
       case None:
@@ -35,8 +35,14 @@ string display(shared_ptr<LightController> lightController) {
 
 NCursesGui gui;
 
-shared_ptr<LightController> lightController;
-shared_ptr<LightStateMachine> lightStateMachine;
+FakeLight light;
+TimeTools::Time currentTime;
+
+LightController lightController((ILight *)&light);
+LightBlinker lightBlinker(&lightController);
+LightStateMachine lightStateMachine(&lightController, &lightBlinker);
+
+AlarmStateMachine alarmStateMachine(&lightStateMachine);
 
 int day = 0;
 int hour = 6;
@@ -58,13 +64,6 @@ void bumpTime(int numberOfMinutes) {
 }
 
 int main() {
-  FakeLight light;
-  TimeTools::Time currentTime;
-
-  lightController = make_shared<LightController>((ILight *)&light);
-  lightStateMachine = make_shared<LightStateMachine>(lightController);
-
-  AlarmStateMachine alarmStateMachine(lightStateMachine);
 
   bool running = true;
 
@@ -81,7 +80,7 @@ int main() {
 
     int currentPosition = 1;
     gui.print(timeString, 0);
-    gui.print(display(lightController), currentPosition);
+    gui.print(display(&lightController), currentPosition);
 
     usleep(500000);
 
@@ -91,7 +90,7 @@ int main() {
     currentTime.minute = minute;
 
     alarmStateMachine.setCurrentTime(currentTime);
-    lightStateMachine->tick(elapsedTimeMs);
+    lightStateMachine.tick(elapsedTimeMs);
 
     char c = getch();
 
@@ -100,7 +99,7 @@ int main() {
         running = false;
         break;
       case 'z':
-        lightStateMachine->toggleAutoOff(elapsedTimeMs);
+        lightStateMachine.toggleAutoOff(elapsedTimeMs);
         break;
       case 'r':
         hour = 6;
@@ -119,7 +118,7 @@ int main() {
         bumpTime(120);
         break;
       case ' ': // "Button press"
-        lightStateMachine->toggleLight(elapsedTimeMs);
+        lightStateMachine.toggleLight(elapsedTimeMs);
         break;
     }
   }
