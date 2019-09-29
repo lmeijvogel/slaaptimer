@@ -16,7 +16,7 @@ class AlarmStateMachine {
       this->setState(AlarmState::State::Off);
     }
 
-    void tick(TimeTools::Time &time) {
+    void setCurrentTime(TimeTools::Time &time) {
       if (TimeTools::largerThan(time, OFF_TIME)) {
         this->setState(AlarmState::State::Off);
         return;

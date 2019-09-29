@@ -13,18 +13,23 @@
 
 #include "lib/TimeTools.cpp"
 
-string display(lightState state) {
-  switch (state) {
-    case off:
-      return "-        ";
-    case redFull:
-      return "Red      ";
-    case redHalf:
-      return "Red (1/2)";
-    case green:
-      return "Green    ";
-    case yellow:
-      return "Yellow   ";
+string display(shared_ptr<LightController> lightController) {
+  if (lightController->getIsOn()) {
+    switch (lightController->getColor()) {
+      case None:
+        return "!! NONE !";
+      case Red:
+        if (lightController->getIntensity() < 1.0)
+          return "Red (1/2)";
+        else
+          return "Red      ";
+      case Green:
+        return "Green    ";
+      case Yellow:
+        return "Yellow   ";
+    }
+  } else {
+    return "-        ";
   }
 }
 
@@ -60,14 +65,17 @@ int main() {
 
   bool running = true;
 
+  long loop = 0;
+
   while (running) {
+    int elapsedTimeMs = loop * 500000;
 
     char timeString[6];
     sprintf(timeString, "%02d:%02d", hour, minute);
 
     int currentPosition = 1;
     gui.print(timeString, 0);
-    gui.print(display(lightController->state), currentPosition);
+    gui.print(display(lightController), currentPosition);
 
     usleep(500000);
 
@@ -75,8 +83,10 @@ int main() {
 
     currentTime.hour = hour;
     currentTime.minute = minute;
-    alarmStateMachine.tick(currentTime);
-    lightStateMachine->tick(currentTime);
+
+    /* How to distinguish between minute-ticks and program loop tick? */
+    alarmStateMachine.setCurrentTime(currentTime);
+    lightStateMachine->tick(elapsedTimeMs);
 
     char c = getch();
 
@@ -85,7 +95,7 @@ int main() {
         running = false;
         break;
       case 'z':
-        // stateMachine.buttonLongPress();
+        lightStateMachine->buttonLongPress(elapsedTimeMs);
         break;
       case 's':
         bumpTime(10);
@@ -104,5 +114,6 @@ int main() {
         break;
     }
 
+    loop++;
   }
 }
