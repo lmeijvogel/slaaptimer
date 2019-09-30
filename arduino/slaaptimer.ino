@@ -238,19 +238,21 @@ void checkSerialCommand() {
       // Throw away command
       commandBuffer[0] = '\0';
       commandBufferSize = 0;
+
+      Serial.println("Too many chars!");
       return;
     }
 
     char input = Serial.read();
 
-    if (input == '\r' || input == '\n') {
-      input = '\0';
+    if (input == '\r') {
+      commandBuffer[commandBufferSize++] = '\0';
 
       parseCommandBuffer();
       commandEntered = true;
+    } else {
+      commandBuffer[commandBufferSize++] = input;
     }
-
-    commandBuffer[commandBufferSize++] = input;
   }
 }
 
