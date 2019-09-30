@@ -11,9 +11,7 @@
 #include "AlarmStateMachine.cpp"
 #include "LightStateMachine.cpp"
 
-#include "lib/TimeTools.cpp"
-
-string display(LightController *lightController) {
+std::string display(LightController *lightController) {
   if (lightController->getIsOn()) {
     switch (lightController->getColor()) {
       case None:
@@ -36,7 +34,6 @@ string display(LightController *lightController) {
 NCursesGui gui;
 
 FakeLight light;
-TimeTools::Time currentTime;
 
 LightController lightController((ILight *)&light);
 LightBlinker lightBlinker(&lightController);
@@ -86,10 +83,7 @@ int main() {
 
     bumpTime(1);
 
-    currentTime.hour = hour;
-    currentTime.minute = minute;
-
-    alarmStateMachine.setCurrentTime(currentTime);
+    alarmStateMachine.setCurrentTime(hour, minute);
     lightStateMachine.tick(elapsedTimeMs);
 
     char c = getch();

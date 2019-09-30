@@ -2,11 +2,15 @@
 
 #include "LightStateMachine.cpp"
 #include "AlarmState.cpp"
-#include "lib/TimeTools.cpp"
 
-const TimeTools::Time PREPARE_TIME = { 6, 45 };
-const TimeTools::Time ON_TIME = { 7, 15 };
-const TimeTools::Time OFF_TIME = { 8, 15 };
+struct AlarmTime {
+  int hour;
+  int minute;
+};
+
+const AlarmTime PREPARE_TIME = { 6, 45 };
+const AlarmTime ON_TIME = { 7, 15 };
+const AlarmTime OFF_TIME = { 8, 15 };
 
 class AlarmStateMachine {
   public:
@@ -16,18 +20,20 @@ class AlarmStateMachine {
       this->setState(AlarmState::State::Off);
     }
 
-    void setCurrentTime(TimeTools::Time &time) {
-      if (TimeTools::largerThan(time, OFF_TIME)) {
+    void setCurrentTime(int hour, int minute) {
+      AlarmTime time = { hour, minute };
+
+      if (largerThan(time, OFF_TIME)) {
         this->setState(AlarmState::State::Off);
         return;
       }
 
-      if (TimeTools::largerThan(time, ON_TIME)) {
+      if (largerThan(time, ON_TIME)) {
         this->setState(AlarmState::State::On);
         return;
       }
 
-      if (TimeTools::largerThan(time, PREPARE_TIME)) {
+      if (largerThan(time, PREPARE_TIME)) {
         this->setState(AlarmState::State::Prepare);
         return;
       }
@@ -41,6 +47,19 @@ class AlarmStateMachine {
         this->state = newState;
         this->lightStateMachine->alarmStateChanged(this->state);
       }
+    }
+
+
+    bool largerThan(AlarmTime time, AlarmTime referenceTime) {
+      if (referenceTime.hour < time.hour) {
+        return true;
+      }
+
+      if (referenceTime.hour == time.hour && referenceTime.minute <= time.minute) {
+        return true;
+      }
+
+      return false;
     }
 
     AlarmState::State state = AlarmState::State::Off;
