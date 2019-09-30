@@ -4,6 +4,7 @@
 #include "Color.cpp"
 #include "LightBlinker.cpp"
 #include "LightController.cpp"
+#include "Logger.cpp"
 
 namespace LightState {
   enum State {
@@ -88,8 +89,10 @@ class LightStateMachine {
 
     if (this->autoOff) {
       blinkColor = Red;
+      Logger::println("Auto-off disabled");
     } else {
       blinkColor = Green;
+      Logger::println("Auto-off enabled");
     }
 
     this->lightBlinker->start(blinkColor, 2, currentTimeMillis);
@@ -119,7 +122,7 @@ class LightStateMachine {
       long autoOffScheduledTime = this->lightToggleTimeMillis + oneHour;
 
       if (autoOffScheduledTime < currentTimeMillis) {
-        Serial.println("Auto-off was scheduled. Turning off");
+        Logger::println("Auto-off was scheduled. Turning off");
 
         this->state = State::Off;
 

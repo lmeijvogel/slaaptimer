@@ -2,6 +2,7 @@
 
 #include "LightStateMachine.cpp"
 #include "AlarmState.cpp"
+#include "Logger.cpp"
 
 struct AlarmTime {
   int hour;
