@@ -13,12 +13,11 @@ namespace LightState {
   };
 }
 
-using namespace std;
 using namespace Color;
 using namespace LightState;
 
-const long oneHour = 60 * 60 * 1000;
-const long twelveHours = 12 * oneHour;
+const long oneHour = 60l * 60 * 1000;
+const long twelveHours = 12l * oneHour;
 
 class LightStateMachine {
   public:
