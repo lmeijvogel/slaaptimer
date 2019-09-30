@@ -5,7 +5,7 @@
 #include "../src/Color.cpp"
 #include "../src/ILight.cpp"
 
-class LedLight : ILight {
+class LedLight : public ILight {
   public:
     LedLight(int redPin, int greenPin, int bluePin) {
       this->redPin = redPin;
