@@ -1,5 +1,6 @@
 #pragma once
 
+#include <time.h>
 #include "AlarmState.cpp"
 #include "Color.cpp"
 #include "LightBlinker.cpp"
@@ -17,7 +18,7 @@ namespace LightState {
 using namespace Color;
 using namespace LightState;
 
-const long oneHour = 60l * 60 * 1000;
+const long oneHour = 60l * 60;
 const long twelveHours = 12l * oneHour;
 
 class LightStateMachine {
@@ -65,13 +66,13 @@ class LightStateMachine {
 
     ColorName color = colorForState(alarmState);
 
-    lightController->set(color, 1.0);
+    lightController->set(color, 0.3);
   }
 
   void toggleLight(long currentTimeMillis) {
     switch (this->alarmState) {
       case AlarmState::State::Off:
-        this->lightToggleTimeMillis = currentTimeMillis;
+        this->lightToggleTime = currentTimeMillis;
         toggleThreeState();
         break;
       case AlarmState::State::Prepare:
@@ -83,8 +84,8 @@ class LightStateMachine {
     this->applyState();
   }
 
-  // The current time is necessary to time the blinks
-  void toggleAutoOff(long currentTimeMillis) {
+  // currentTimeMillis is necessary to time the blinks
+  void toggleAutoOff(time_t currentTime, long currentTimeMillis) {
     ColorName blinkColor;
 
     if (this->autoOff) {
@@ -99,17 +100,18 @@ class LightStateMachine {
 
     this->autoOff = !this->autoOff;
 
-    this->autoOffSettingExpiryTimeMillis = currentTimeMillis + twelveHours;
-    this->lightToggleTimeMillis = currentTimeMillis;
+    this->autoOffSettingExpiryTimeMillis = currentTime + twelveHours;
+    this->lightToggleTime = currentTime;
   }
 
-  void tick(long currentTimeMillis) {
+  void tick(time_t currentTime) {
     // The autoOff setting is reset after this time
-    if (this->autoOffSettingExpiryTimeMillis < currentTimeMillis) {
+    if (this->autoOffSettingExpiryTimeMillis < currentTime) {
       this->autoOff = false;
     }
 
-    if (this->autoOff) {
+    bool canTurnAutoOff = this->state == State::Half || this->state == State::Full;
+    if (canTurnAutoOff && this->autoOff) {
       // Only turn off the light if it is Red, not when it's Yellow or Green since they
       // have their own timers
       if (this->alarmState != AlarmState::State::Off) {
@@ -119,9 +121,9 @@ class LightStateMachine {
       // TODO: This works, but is badly testable: I can't set a new time
       // in the console and have this respond because it uses the internal
       // Arduino `millis()` function, not our custom time.
-      long autoOffScheduledTime = this->lightToggleTimeMillis + oneHour;
+      time_t autoOffScheduledTime = this->lightToggleTime + oneHour;
 
-      if (autoOffScheduledTime < currentTimeMillis) {
+      if (autoOffScheduledTime < currentTime) {
         Logger::println("Auto-off was scheduled. Turning off");
 
         this->state = State::Off;
@@ -174,7 +176,7 @@ class LightStateMachine {
   State state;
   LightBlinker *lightBlinker;
 
-  long lightToggleTimeMillis = 0;
-  long autoOffSettingExpiryTimeMillis = 0;
+  time_t lightToggleTime = 0;
+  time_t autoOffSettingExpiryTimeMillis = 0;
   bool autoOff = false;
 };

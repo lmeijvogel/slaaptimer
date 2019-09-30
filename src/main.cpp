@@ -88,12 +88,16 @@ int main() {
 
     char c = getch();
 
+    time_t currentTime;
+    time(&currentTime);
+
     switch (c) {
       case 'q':
         running = false;
         break;
       case 'z':
-        lightStateMachine.toggleAutoOff(elapsedTimeMs);
+        lightStateMachine.toggleAutoOff(currentTime, elapsedTimeMs);
+
         break;
       case 'r':
         hour = 6;

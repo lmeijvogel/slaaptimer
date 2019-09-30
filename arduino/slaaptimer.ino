@@ -89,9 +89,11 @@ void setup() {
 }
 
 void loop() {
+  time_t currentTime = now();
+
   long currentTimeMillis = millis();
 
-  lightStateMachine.tick(currentTimeMillis);
+  lightStateMachine.tick(currentTime);
   lightBlinker.tick(currentTimeMillis);
 
   int currentHour = hour(now());
@@ -111,14 +113,15 @@ void checkButtonPress() {
 
   bool buttonIsPressed = button.isPressed();
 
-  long currentTime = millis();
+  time_t currentTime = now();
+  long currentTimeMillis = millis();
 
   if (!buttonWasPressed && buttonIsPressed) {
-    buttonPressStartMillis = currentTime;
+    buttonPressStartMillis = currentTimeMillis;
   }
 
   if (buttonWasPressed) {
-    long pressDuration = currentTime - buttonPressStartMillis;
+    long pressDuration = currentTimeMillis - buttonPressStartMillis;
 
     bool wasLongPress = LONG_PRESS_THRESHOLD_MILLIS < pressDuration;
 
@@ -129,7 +132,7 @@ void checkButtonPress() {
         longPressRegistered = true;
         Serial.println("Button long press");
 
-        lightStateMachine.toggleAutoOff(currentTime);
+        lightStateMachine.toggleAutoOff(currentTime, currentTimeMillis);
       }
     }
 
