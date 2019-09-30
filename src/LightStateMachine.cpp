@@ -106,14 +106,21 @@ class LightStateMachine {
       this->autoOff = false;
     }
 
-    long autoOffSettingRetentionTimeMillis = 12 * 60 * 60 * 1000;
+    if (this->autoOff) {
+      // Only turn off the light if it is Red, not when it's Yellow or Green since they
+      // have their own timers
+      if (this->alarmState != AlarmState::State::Off) {
+        return;
+      }
 
-    this->lightBlinker->tick(currentTimeMillis);
+      // TODO: This works, but is badly testable: I can't set a new time
+      // in the console and have this respond because it uses the internal
+      // Arduino `millis()` function, not our custom time.
+      long autoOffScheduledTime = this->lightToggleTimeMillis + oneHour;
 
-    // Only turn off the light if it is Red, not when it's Yellow or Green since they
-    // have their own timers
-    if (this->alarmState == AlarmState::State::Off) {
-      if (this->autoOff && (this->lightToggleTimeMillis + oneHour < currentTimeMillis)) {
+      if (autoOffScheduledTime < currentTimeMillis) {
+        Serial.println("Auto-off was scheduled. Turning off");
+
         this->state = State::Off;
 
         this->applyState();

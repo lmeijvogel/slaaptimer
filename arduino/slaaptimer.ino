@@ -25,16 +25,18 @@ const int DISPLAY_MIN_BRIGHTNESS = 8; // Below this brightness, the display is o
 
 const bool ENABLE_RTC = false;
 
+const long LONG_PRESS_THRESHOLD_MILLIS = 1000;
+
 TM1637Display display(DISPLAY_CLOCK_PIN, DISPLAY_DIO_PIN);
 LedLight light(RED_PIN, GREEN_PIN, BLUE_PIN);
 PhysicalButton button(BUTTON_PIN);
 
 void checkButtonPress();
-bool buttonWasPressed = false;
-int state = 0;
 
-void nextState();
-void applyState();
+bool buttonWasPressed = false;
+long buttonPressStartMillis = 0;
+bool longPressRegistered = false;
+int state = 0;
 
 void checkSerialCommand();
 
@@ -57,6 +59,12 @@ unsigned long lastSyncFromRtcMillis = 0;
 bool rtcPresent;
 bool rtcRunning;
 
+
+LightController lightController(&light);
+LightBlinker lightBlinker(&lightController);
+LightStateMachine lightStateMachine(&lightController, &lightBlinker);
+AlarmStateMachine alarmStateMachine(&lightStateMachine);
+
 void setup() {
   Serial.begin(9600);
   Serial.println("Started");
@@ -78,11 +86,19 @@ void setup() {
 
   pinMode(DISPLAY_DIO_PIN, OUTPUT);
   pinMode(DISPLAY_CLOCK_PIN, OUTPUT);
-
-  applyState();
 }
 
 void loop() {
+  long currentTimeMillis = millis();
+
+  lightStateMachine.tick(currentTimeMillis);
+  lightBlinker.tick(currentTimeMillis);
+
+  int currentHour = hour(now());
+  int currentMinute = minute(now());
+
+  alarmStateMachine.setCurrentTime(currentHour, currentMinute);
+
   checkButtonPress();
 
   checkSerialCommand();
@@ -95,13 +111,37 @@ void checkButtonPress() {
 
   bool buttonIsPressed = button.isPressed();
 
-  if (buttonWasPressed && !buttonIsPressed) {
-    Serial.println("Button pressed!");
-    nextState();
+  long currentTime = millis();
 
-    Serial.print("New state: ");
-    Serial.println(state);
-    applyState();
+  if (!buttonWasPressed && buttonIsPressed) {
+    buttonPressStartMillis = currentTime;
+  }
+
+  if (buttonWasPressed) {
+    long pressDuration = currentTime - buttonPressStartMillis;
+
+    bool wasLongPress = LONG_PRESS_THRESHOLD_MILLIS < pressDuration;
+
+    bool stillPressing = buttonIsPressed;
+
+    if (stillPressing) {
+      if (wasLongPress && !longPressRegistered) {
+        longPressRegistered = true;
+        Serial.println("Button long press");
+
+        lightStateMachine.toggleAutoOff(currentTime);
+      }
+    }
+
+    if (!stillPressing) {
+      longPressRegistered = false;
+    }
+
+    if (!stillPressing && !wasLongPress) {
+      Serial.println("Button short press");
+
+      lightStateMachine.toggleLight(currentTime);
+    }
   }
 
   buttonWasPressed = buttonIsPressed;
@@ -174,28 +214,6 @@ int determineDisplayBrightness(time_t time) {
     return low;
   } else {
     return high;
-  }
-}
-
-void nextState() {
-  state++;
-  state &= 0x3;
-}
-
-void applyState() {
-  switch (state) {
-    case 0:
-      light.set(ColorName::None);
-      break;
-    case 1:
-      light.set(ColorName::Red);
-      break;
-    case 2:
-      light.set(ColorName::Yellow);
-      break;
-    case 3:
-      light.set(ColorName::Green);
-      break;
   }
 }
 
