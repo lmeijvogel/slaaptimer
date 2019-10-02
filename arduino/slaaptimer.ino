@@ -13,6 +13,15 @@
  * SDA: A5
  */
 
+namespace RtcStatus {
+  enum Status {
+    Unknown,
+    OK,
+    Missing,
+    NotRunning
+  };
+}
+
 const int BUTTON_PIN = 3;
 const int RED_PIN = 9;
 const int GREEN_PIN = 10;
@@ -59,10 +68,8 @@ int commandBufferSize = 0;
 bool commandEntered = false;
 
 unsigned long lastSyncFromRtcMillis = 0;
-bool rtcError = false;
-bool rtcPresent;
-bool rtcRunning;
 
+RtcStatus::Status rtcStatus = RtcStatus::Status::Unknown;
 
 LightController lightController(&light);
 LightBlinker lightBlinker(&lightController);
@@ -76,10 +83,9 @@ void setup() {
   if (ENABLE_RTC) {
     checkRtcAndGetTime();
 
-    if (!rtcRunning) {
+    if (rtcStatus != RtcStatus::OK) {
       showRtcError();
     }
-
   } else {
     Serial.println("RTC disabled, setting default time.");
     initializeTime(6, 30, 0);
@@ -114,7 +120,9 @@ void loop() {
 
   checkSerialCommand();
 
-  showTime(now());
+  if (rtcStatus == RtcStatus::Status::OK) {
+    showTime(now());
+  }
 }
 
 void checkButtonPress() {
@@ -163,24 +171,22 @@ void checkRtcAndGetTime() {
   tmElements_t timeElements;
 
   bool rtcOk = RTC.read(timeElements);
-  rtcError = !rtcOk;
 
   if (rtcOk) {
-    setTime(makeTime(timeElements));
+    rtcStatus = RtcStatus::Status::OK;
 
-    rtcPresent = true;
-    rtcRunning = true;
+    setTime(makeTime(timeElements));
   } else {
-    rtcPresent = RTC.chipPresent();
+    bool rtcPresent = RTC.chipPresent();
 
     if (!rtcPresent) {
-      Serial.println("RTC not present!");
-      rtcRunning = false;
+      rtcStatus = RtcStatus::Status::Missing;
 
-      return;
+      Serial.println("RTC not present!");
     } else {
+      rtcStatus = RtcStatus::Status::NotRunning;
+
       Serial.println("RTC not initialized!");
-      rtcRunning = false;
     }
   }
 }
@@ -201,10 +207,6 @@ void getTimeFromRtc() {
 }
 
 void showTime(time_t time) {
-  if (rtcError) {
-    return;
-  }
-
   int displayBrightness = determineDisplayBrightness(time);
 
   display.setBrightness(displayBrightness);
@@ -235,20 +237,34 @@ void showRtcError() {
   const uint8_t N = SEG_A | SEG_F | SEG_B | SEG_E | SEG_C;
 
   const uint8_t O = SEG_A | SEG_F | SEG_E | SEG_D | SEG_C | SEG_B;
+  const uint8_t P = SEG_A | SEG_F | SEG_E | SEG_G | SEG_B;
   const uint8_t S = SEG_A | SEG_F | SEG_G | SEG_C | SEG_D;
   const uint8_t T = SEG_A | SEG_F | SEG_E;
-  const uint8_t P = SEG_A | SEG_F | SEG_E | SEG_G | SEG_B;
+
+  const uint8_t dash = SEG_G;
 
   const uint8_t empty = 0;
 
-  if (!rtcPresent) {
-    Serial.println("Showing letters \"NO C\".");
-    uint8_t letters[] = { N, O, empty, C };
-    showLetters(letters);
-  } else if (!rtcRunning) {
-    Serial.println("Showing letters \"COFF\".");
-    uint8_t letters[] = { C, S, T, P };
-    showLetters(letters);
+  uint8_t msgUnknown[] = { dash, dash, dash, dash };
+  uint8_t msgMissing[] = { N, O, empty, C };
+  uint8_t msgNotRunning[] = { C, S, T, P };
+
+  switch (rtcStatus) {
+    case RtcStatus::Status::Unknown:
+      Serial.println("Showing letters \"----\".");
+      showLetters(msgUnknown);
+      break;
+    case RtcStatus::Status::Missing:
+      Serial.println("Showing letters \"NO C\".");
+      showLetters(msgMissing);
+      break;
+    case RtcStatus::Status::NotRunning:
+      Serial.println("Showing letters \"COFF\".");
+      showLetters(msgNotRunning);
+      break;
+    default:
+      Serial.println("Unexpected rtcStatus!");
+      break;
   }
 }
 
