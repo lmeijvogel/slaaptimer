@@ -41,7 +41,6 @@ void parseCommandBuffer();
 void initializeTime(int hour, int minute, int second);
 
 void checkRtcAndGetTime();
-void getTimeFromRtc();
 
 const int MAX_COMMAND_BUFFER_SIZE = 12;
 char commandBuffer[MAX_COMMAND_BUFFER_SIZE];
@@ -182,21 +181,6 @@ void checkRtcAndGetTime() {
 
       Serial.println("RTC not initialized!");
     }
-  }
-}
-
-void getTimeFromRtc() {
-  unsigned long minimumTimeBetweenSyncsMillis = 60l * 1000;
-
-  unsigned long currentTimeMillis = millis();
-
-  unsigned long timeSinceLastSyncMillis = currentTimeMillis - lastSyncFromRtcMillis;
-
-  if (minimumTimeBetweenSyncsMillis < timeSinceLastSyncMillis) {
-    Serial.println("Reading time from RTC unit");
-
-    setTime(RTC.get());
-    lastSyncFromRtcMillis = currentTimeMillis;
   }
 }
 
