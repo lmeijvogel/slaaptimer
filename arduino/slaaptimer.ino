@@ -86,23 +86,21 @@ void setup() {
 }
 
 void loop() {
-  time_t currentTime = now();
-
   if (rtcStatus == RtcStatus::Status::Unknown) {
     rtcClock.checkRtcAndGetTime();
   }
+
+  time_t currentTime = now();
 
   if (rtcStatus == RtcStatus::Status::OK) {
     display.showTime(currentTime);
   }
 
-  long currentTimeMillis = millis();
-
   lightStateMachine.tick(currentTime);
-  lightBlinker.tick(currentTimeMillis);
+  lightBlinker.tick(millis());
 
-  int currentHour = hour(now());
-  int currentMinute = minute(now());
+  int currentHour = hour(currentTime);
+  int currentMinute = minute(currentTime);
 
   alarmStateMachine.setCurrentTime(currentHour, currentMinute);
 
