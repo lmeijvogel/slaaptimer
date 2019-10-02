@@ -166,6 +166,7 @@ class LightStateMachine {
       case AlarmState::State::Off:     return Red;
       case AlarmState::State::Prepare: return Yellow;
       case AlarmState::State::On:      return Green;
+      default:                         return None;
     }
   }
 
