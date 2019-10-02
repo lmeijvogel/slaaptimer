@@ -1,9 +1,8 @@
-#include "DS1307RTC.h"
-
 #include "PhysicalButton.cpp"
 #include "LedLight.cpp"
 #include "Time.h"
 #include "Display.cpp"
+#include "RtcClock.cpp"
 
 #include "../src/LightController.cpp"
 #include "../src/LightStateMachine.cpp"
@@ -38,10 +37,6 @@ void checkSerialCommand();
 
 void parseCommandBuffer();
 
-void initializeTime(int hour, int minute, int second);
-
-void checkRtcAndGetTime();
-
 const int MAX_COMMAND_BUFFER_SIZE = 12;
 char commandBuffer[MAX_COMMAND_BUFFER_SIZE];
 int commandBufferSize = 0;
@@ -55,9 +50,11 @@ LightController lightController(&light);
 LightBlinker lightBlinker(&lightController);
 LightStateMachine lightStateMachine(&lightController, &lightBlinker);
 AlarmStateMachine alarmStateMachine(&lightStateMachine);
-TM1637Display tm1637display(DISPLAY_CLOCK_PIN, DISPLAY_DIO_PIN);
 
+TM1637Display tm1637display(DISPLAY_CLOCK_PIN, DISPLAY_DIO_PIN);
 Display display(&tm1637display);
+
+RtcClock rtcClock(ENABLE_RTC);
 
 void setup() {
   Serial.begin(9600);
@@ -67,14 +64,14 @@ void setup() {
   pinMode(DISPLAY_CLOCK_PIN, OUTPUT);
 
   if (ENABLE_RTC) {
-    checkRtcAndGetTime();
+    rtcClock.checkRtcAndGetTime();
 
     if (rtcStatus != RtcStatus::OK) {
       display.showRtcError(rtcStatus);
     }
   } else {
     Serial.println("RTC disabled, setting default time.");
-    initializeTime(6, 30, 0);
+    rtcClock.initializeTime(6, 30, 0);
 
     rtcStatus = RtcStatus::Status::OK;
   }
@@ -92,7 +89,7 @@ void loop() {
   time_t currentTime = now();
 
   if (rtcStatus == RtcStatus::Status::Unknown) {
-    checkRtcAndGetTime();
+    rtcClock.checkRtcAndGetTime();
   }
 
   if (rtcStatus == RtcStatus::Status::OK) {
@@ -156,34 +153,6 @@ void checkButtonPress() {
   buttonWasPressed = buttonIsPressed;
 }
 
-void checkRtcAndGetTime() {
-  if (!ENABLE_RTC) {
-    return;
-  }
-
-  tmElements_t timeElements;
-
-  bool rtcOk = RTC.read(timeElements);
-
-  if (rtcOk) {
-    rtcStatus = RtcStatus::Status::OK;
-
-    setTime(makeTime(timeElements));
-  } else {
-    bool rtcPresent = RTC.chipPresent();
-
-    if (!rtcPresent) {
-      rtcStatus = RtcStatus::Status::Missing;
-
-      Serial.println("RTC not present!");
-    } else {
-      rtcStatus = RtcStatus::Status::NotRunning;
-
-      Serial.println("RTC not initialized!");
-    }
-  }
-}
-
 void parseCommandBuffer() {
   Serial.print("Received: ");
   Serial.println(commandBuffer);
@@ -201,7 +170,7 @@ void parseCommandBuffer() {
 
       Serial.println(message);
 
-      initializeTime(hour, minute, 0);
+      rtcClock.initializeTime(hour, minute, 0);
     } else {
       // Use fact that the prefix is 'time' to build the sentence
       sprintf(message, "Invalid %s", commandBuffer);
@@ -240,14 +209,3 @@ void checkSerialCommand() {
     }
   }
 }
-
-void initializeTime(int hour, int minute, int second) {
-  setTime(hour, minute, second, 27, 9, 2019);
-
-  if (ENABLE_RTC) {
-    RTC.set(now());
-
-    rtcStatus = RtcStatus::Status::Unknown;
-  }
-}
-
