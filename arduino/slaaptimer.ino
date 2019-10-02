@@ -1,43 +1,29 @@
-#include "TM1637Display.h"
 #include "DS1307RTC.h"
 
 #include "PhysicalButton.cpp"
 #include "LedLight.cpp"
 #include "Time.h"
+#include "Display.cpp"
 
 #include "../src/LightController.cpp"
 #include "../src/LightStateMachine.cpp"
 #include "../src/AlarmStateMachine.cpp"
 
+#include "RtcStatus.h"
+
 /* SCL: A4
  * SDA: A5
  */
-
-namespace RtcStatus {
-  enum Status {
-    Unknown,
-    OK,
-    Missing,
-    NotRunning
-  };
-}
 
 const int BUTTON_PIN = 3;
 const int RED_PIN = 9;
 const int GREEN_PIN = 10;
 const int BLUE_PIN = 11;
 
-const int DISPLAY_CLOCK_PIN = 7;
-const int DISPLAY_DIO_PIN = 6;
-
-const int DISPLAY_MAX_BRIGHTNESS = 15;
-const int DISPLAY_MIN_BRIGHTNESS = 8; // Below this brightness, the display is off.
-
 const bool ENABLE_RTC = false;
 
 const long LONG_PRESS_THRESHOLD_MILLIS = 1000;
 
-TM1637Display display(DISPLAY_CLOCK_PIN, DISPLAY_DIO_PIN);
 LedLight light(RED_PIN, GREEN_PIN, BLUE_PIN);
 PhysicalButton button(BUTTON_PIN);
 
@@ -48,17 +34,10 @@ long buttonPressStartMillis = 0;
 bool longPressRegistered = false;
 int state = 0;
 
-int previouslyShownSecond = -1;
-
 void checkSerialCommand();
 
 void parseCommandBuffer();
 
-void showTime(time_t time);
-void showLetters(uint8_t *letters);
-void showRtcError();
-
-int determineDisplayBrightness(time_t time);
 void initializeTime(int hour, int minute, int second);
 
 void checkRtcAndGetTime();
@@ -77,16 +56,22 @@ LightController lightController(&light);
 LightBlinker lightBlinker(&lightController);
 LightStateMachine lightStateMachine(&lightController, &lightBlinker);
 AlarmStateMachine alarmStateMachine(&lightStateMachine);
+TM1637Display tm1637display(DISPLAY_CLOCK_PIN, DISPLAY_DIO_PIN);
+
+Display display(&tm1637display);
 
 void setup() {
   Serial.begin(9600);
   Serial.println("Started");
 
+  pinMode(DISPLAY_DIO_PIN, OUTPUT);
+  pinMode(DISPLAY_CLOCK_PIN, OUTPUT);
+
   if (ENABLE_RTC) {
     checkRtcAndGetTime();
 
     if (rtcStatus != RtcStatus::OK) {
-      showRtcError();
+      display.showRtcError(rtcStatus);
     }
   } else {
     Serial.println("RTC disabled, setting default time.");
@@ -102,9 +87,6 @@ void setup() {
 
   Serial.println(timeMessage);
   Serial.println("Send 'time nn:nn' to set the time");
-
-  pinMode(DISPLAY_DIO_PIN, OUTPUT);
-  pinMode(DISPLAY_CLOCK_PIN, OUTPUT);
 }
 
 void loop() {
@@ -115,7 +97,7 @@ void loop() {
   }
 
   if (rtcStatus == RtcStatus::Status::OK) {
-    showTime(currentTime);
+    display.showTime(currentTime);
   }
 
   long currentTimeMillis = millis();
@@ -215,94 +197,6 @@ void getTimeFromRtc() {
 
     setTime(RTC.get());
     lastSyncFromRtcMillis = currentTimeMillis;
-  }
-}
-
-void showTime(time_t time) {
-  int currentSecond = second(time);
-
-  if (currentSecond == previouslyShownSecond) {
-      return;
-  }
-
-  int displayBrightness = determineDisplayBrightness(time);
-
-  display.setBrightness(displayBrightness);
-
-  uint8_t colonBitMask = (currentSecond & 1) << 6;
-
-  int currentHour = hour(time);
-  int currentMinute = minute(time);
-
-  // show hours (no leading 0, with blinking colon)
-  display.showNumberDecEx(currentHour, colonBitMask, false, 2, 0);
-
-  // show minutes (leading 0s)
-  display.showNumberDec(currentMinute, true, 2, 2);
-
-  previouslyShownSecond = currentSecond;
-}
-
-void showRtcError() {
-  /* Segments:
-   *  AA
-   * F  B
-   *  GG
-   * E  C
-   *  DD
-   */
-
-  const uint8_t C = SEG_A | SEG_F | SEG_E | SEG_D;
-
-  const uint8_t N = SEG_A | SEG_F | SEG_B | SEG_E | SEG_C;
-
-  const uint8_t O = SEG_A | SEG_F | SEG_E | SEG_D | SEG_C | SEG_B;
-  const uint8_t P = SEG_A | SEG_F | SEG_E | SEG_G | SEG_B;
-  const uint8_t S = SEG_A | SEG_F | SEG_G | SEG_C | SEG_D;
-  const uint8_t T = SEG_A | SEG_F | SEG_E;
-
-  const uint8_t dash = SEG_G;
-
-  const uint8_t empty = 0;
-
-  uint8_t msgUnknown[] = { dash, dash, dash, dash };
-  uint8_t msgMissing[] = { N, O, empty, C };
-  uint8_t msgNotRunning[] = { C, S, T, P };
-
-  switch (rtcStatus) {
-    case RtcStatus::Status::Unknown:
-      Serial.println("Showing letters \"----\".");
-      showLetters(msgUnknown);
-      break;
-    case RtcStatus::Status::Missing:
-      Serial.println("Showing letters \"NO C\".");
-      showLetters(msgMissing);
-      break;
-    case RtcStatus::Status::NotRunning:
-      Serial.println("Showing letters \"COFF\".");
-      showLetters(msgNotRunning);
-      break;
-    default:
-      Serial.println("Unexpected rtcStatus!");
-      break;
-  }
-}
-
-void showLetters(uint8_t *letters) {
-  display.setBrightness(10);
-  display.setSegments(letters, 4, 0);
-}
-
-int determineDisplayBrightness(time_t time) {
-  int low = 8;
-  int high = 12;
-
-  int currentHour = hour(time);
-
-  if (currentHour < 7 || 19 <= currentHour) {
-    return low;
-  } else {
-    return high;
   }
 }
 
