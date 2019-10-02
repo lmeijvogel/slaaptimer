@@ -9,9 +9,10 @@
 #include "../src/LightStateMachine.cpp"
 #include "../src/AlarmStateMachine.cpp"
 
-/* SDA: A5
- * SCL: A4
+/* SCL: A4
+ * SDA: A5
  */
+
 const int BUTTON_PIN = 3;
 const int RED_PIN = 9;
 const int GREEN_PIN = 10;
