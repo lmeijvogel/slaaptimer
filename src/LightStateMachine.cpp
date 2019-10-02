@@ -53,7 +53,7 @@ class LightStateMachine {
     if (alarmState == AlarmState::State::Off) {
       float intensity;
       if (this->state == State::Half) {
-        intensity = 0.5;
+        intensity = 0.3;
       } else if (this->state == State::Full) {
         intensity = 1;
       } else {
