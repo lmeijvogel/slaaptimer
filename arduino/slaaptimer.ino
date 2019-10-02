@@ -281,6 +281,8 @@ void checkSerialCommand() {
 void initializeTime(int hour, int minute, int second) {
   setTime(hour, minute, second, 27, 9, 2019);
 
-  RTC.set(now());
+  if (ENABLE_RTC) {
+    RTC.set(now());
+  }
 }
 
