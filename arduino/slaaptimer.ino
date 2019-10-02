@@ -89,6 +89,8 @@ void setup() {
   } else {
     Serial.println("RTC disabled, setting default time.");
     initializeTime(6, 30, 0);
+
+    rtcStatus = RtcStatus::Status::OK;
   }
 
   time_t time = now();
@@ -106,6 +108,14 @@ void setup() {
 void loop() {
   time_t currentTime = now();
 
+  if (rtcStatus == RtcStatus::Status::Unknown) {
+    checkRtcAndGetTime();
+  }
+
+  if (rtcStatus == RtcStatus::Status::OK) {
+    showTime(currentTime);
+  }
+
   long currentTimeMillis = millis();
 
   lightStateMachine.tick(currentTime);
@@ -119,10 +129,6 @@ void loop() {
   checkButtonPress();
 
   checkSerialCommand();
-
-  if (rtcStatus == RtcStatus::Status::OK) {
-    showTime(now());
-  }
 }
 
 void checkButtonPress() {
@@ -168,6 +174,10 @@ void checkButtonPress() {
 }
 
 void checkRtcAndGetTime() {
+  if (!ENABLE_RTC) {
+    return;
+  }
+
   tmElements_t timeElements;
 
   bool rtcOk = RTC.read(timeElements);
@@ -348,6 +358,8 @@ void initializeTime(int hour, int minute, int second) {
 
   if (ENABLE_RTC) {
     RTC.set(now());
+
+    rtcStatus = RtcStatus::Status::Unknown;
   }
 }
 
