@@ -48,6 +48,8 @@ long buttonPressStartMillis = 0;
 bool longPressRegistered = false;
 int state = 0;
 
+int previouslyShownSecond = -1;
+
 void checkSerialCommand();
 
 void parseCommandBuffer();
@@ -217,20 +219,28 @@ void getTimeFromRtc() {
 }
 
 void showTime(time_t time) {
+  int currentSecond = second(time);
+
+  if (currentSecond == previouslyShownSecond) {
+      return;
+  }
+
   int displayBrightness = determineDisplayBrightness(time);
 
   display.setBrightness(displayBrightness);
 
+  uint8_t colonBitMask = (currentSecond & 1) << 6;
+
   int currentHour = hour(time);
   int currentMinute = minute(time);
-
-  uint8_t colonBitMask = (second(time) & 1) << 6;
 
   // show hours (no leading 0, with blinking colon)
   display.showNumberDecEx(currentHour, colonBitMask, false, 2, 0);
 
   // show minutes (leading 0s)
   display.showNumberDec(currentMinute, true, 2, 2);
+
+  previouslyShownSecond = currentSecond;
 }
 
 void showRtcError() {
