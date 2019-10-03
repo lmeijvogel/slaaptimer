@@ -48,6 +48,11 @@ class RtcClock {
       }
     }
 
+    RtcStatus::Status status() {
+      return this->rtcStatus;
+    }
+
+
   private:
     bool enableRtc;
     RtcStatus::Status rtcStatus;

@@ -44,8 +44,6 @@ bool commandEntered = false;
 
 unsigned long lastSyncFromRtcMillis = 0;
 
-RtcStatus::Status rtcStatus = RtcStatus::Status::Unknown;
-
 LightController lightController(&light);
 LightBlinker lightBlinker(&lightController);
 LightStateMachine lightStateMachine(&lightController, &lightBlinker);
@@ -66,14 +64,12 @@ void setup() {
   if (ENABLE_RTC) {
     rtcClock.checkRtcAndGetTime();
 
-    if (rtcStatus != RtcStatus::OK) {
-      display.showRtcError(rtcStatus);
+    if (rtcClock.status() != RtcStatus::OK) {
+      display.showRtcError(rtcClock.status());
     }
   } else {
     Serial.println("RTC disabled, setting default time.");
     rtcClock.initializeTime(6, 30, 0);
-
-    rtcStatus = RtcStatus::Status::OK;
   }
 
   time_t time = now();
@@ -86,13 +82,13 @@ void setup() {
 }
 
 void loop() {
-  if (rtcStatus == RtcStatus::Status::Unknown) {
+  if (rtcClock.status() == RtcStatus::Status::Unknown) {
     rtcClock.checkRtcAndGetTime();
   }
 
   time_t currentTime = now();
 
-  if (rtcStatus == RtcStatus::Status::OK) {
+  if (rtcClock.status() == RtcStatus::Status::OK) {
     display.showTime(currentTime);
   }
 
