@@ -6,9 +6,6 @@
 
 #include "RtcStatus.h"
 
-const int DISPLAY_CLOCK_PIN = 7;
-const int DISPLAY_DIO_PIN = 6;
-
 const int DISPLAY_MAX_BRIGHTNESS = 15;
 const int DISPLAY_MIN_BRIGHTNESS = 8; // Below this brightness, the display is off.
 

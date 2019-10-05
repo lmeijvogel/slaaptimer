@@ -15,6 +15,10 @@
  */
 
 const int BUTTON_PIN = 3;
+
+const int DISPLAY_DIO_PIN = 6;
+const int DISPLAY_CLOCK_PIN = 7;
+
 const int RED_PIN = 9;
 const int GREEN_PIN = 10;
 const int BLUE_PIN = 11;
