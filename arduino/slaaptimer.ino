@@ -105,7 +105,7 @@ void loop() {
 
   time_t currentTime = now();
 
-  if (rtcClock.status() == RtcStatus::Status::OK) {
+  if (!ENABLE_RTC || (rtcClock.status() == RtcStatus::Status::OK)) {
     display.showTime(currentTime);
   }
 
