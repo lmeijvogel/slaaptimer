@@ -52,8 +52,6 @@ char commandBuffer[MAX_COMMAND_BUFFER_SIZE];
 int commandBufferSize = 0;
 bool commandEntered = false;
 
-unsigned long lastSyncFromRtcMillis = 0;
-
 LightController lightController(&light);
 LightBlinker lightBlinker(&lightController);
 LightStateMachine lightStateMachine(&lightController, &lightBlinker);
