@@ -8,6 +8,8 @@
 #include "../src/LightStateMachine.cpp"
 #include "../src/AlarmStateMachine.cpp"
 
+#include "Button.cpp"
+
 #include "RtcStatus.h"
 
 /* SCL: A4
@@ -15,19 +17,23 @@
  */
 
 const int BUTTON_PIN = 3;
+// const int BUTTON_LOW_PIN = GND
 
+const int DISPLAY_CLK_PIN = 5;
 const int DISPLAY_DIO_PIN = 6;
-const int DISPLAY_CLOCK_PIN = 7;
+const int DISPLAY_VCC_PIN = 7;
+const int DISPLAY_GND_PIN = 8;
 
-const int RED_PIN = 9;
-const int GREEN_PIN = 10;
-const int BLUE_PIN = 11;
+const int LIGHT_RED_PIN = 9;
+const int LIGHT_GND_PIN = 10;
+const int LIGHT_GREEN_PIN = 11;
+const int LIGHT_BLUE_PIN = 12;
 
-const bool ENABLE_RTC = false;
+const bool ENABLE_RTC = true;
 
 const long LONG_PRESS_THRESHOLD_MILLIS = 1000;
 
-LedLight light(RED_PIN, GREEN_PIN, BLUE_PIN);
+LedLight light(LIGHT_RED_PIN, LIGHT_GREEN_PIN, LIGHT_BLUE_PIN);
 PhysicalButton button(BUTTON_PIN);
 
 void checkButtonPress();
@@ -53,7 +59,7 @@ LightBlinker lightBlinker(&lightController);
 LightStateMachine lightStateMachine(&lightController, &lightBlinker);
 AlarmStateMachine alarmStateMachine(&lightStateMachine);
 
-TM1637Display tm1637display(DISPLAY_CLOCK_PIN, DISPLAY_DIO_PIN);
+TM1637Display tm1637display(DISPLAY_CLK_PIN, DISPLAY_DIO_PIN);
 Display display(&tm1637display);
 
 RtcClock rtcClock(ENABLE_RTC);
@@ -63,7 +69,16 @@ void setup() {
   Serial.println("Started");
 
   pinMode(DISPLAY_DIO_PIN, OUTPUT);
-  pinMode(DISPLAY_CLOCK_PIN, OUTPUT);
+  pinMode(DISPLAY_CLK_PIN, OUTPUT);
+
+  pinMode(DISPLAY_GND_PIN, OUTPUT);
+  digitalWrite(DISPLAY_GND_PIN, LOW);
+
+  pinMode(DISPLAY_VCC_PIN, OUTPUT);
+  digitalWrite(DISPLAY_VCC_PIN, HIGH);
+
+  pinMode(LIGHT_GND_PIN, OUTPUT);
+  digitalWrite(LIGHT_GND_PIN, LOW);
 
   if (ENABLE_RTC) {
     rtcClock.checkRtcAndGetTime();
