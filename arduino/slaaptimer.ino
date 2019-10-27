@@ -98,6 +98,41 @@ void setup() {
   Serial.println("Send 'time nn:nn' to set the time");
 }
 
+int lastRtcSyncMinute;
+
+bool shouldSyncWithRtc(time_t currentTime) {
+  if (!ENABLE_RTC) {
+    return false;
+  }
+
+  // I chose second == 30 here to make the sync as invisible as possible:
+  // It's very unlikely that the clock is more than 30 seconds off,
+  // so there will not be any jumps in the display.
+  int currentSecond = second(currentTime);
+
+  if (currentSecond != 30) {
+    return false;
+  }
+
+  int currentMinute = minute(currentTime);
+
+  // Sync at most once per minute
+  if (lastRtcSyncMinute != currentMinute) {
+    lastRtcSyncMinute = currentMinute;
+
+    return true;
+  }
+
+  return false;
+}
+
+void periodicSyncWithRtc(time_t currentTime) {
+  if (shouldSyncWithRtc(currentTime)) {
+    Serial.println("Performing periodic sync with RTC.");
+    rtcClock.checkRtcAndGetTime();
+  }
+}
+
 void loop() {
   if (rtcClock.status() == RtcStatus::Status::Unknown) {
     rtcClock.checkRtcAndGetTime();
@@ -114,6 +149,8 @@ void loop() {
 
   int currentHour = hour(currentTime);
   int currentMinute = minute(currentTime);
+
+  periodicSyncWithRtc(currentTime);
 
   alarmStateMachine.setCurrentTime(currentHour, currentMinute);
 

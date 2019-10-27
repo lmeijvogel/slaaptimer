@@ -60,17 +60,21 @@ void bumpTime(int numberOfMinutes) {
   }
 }
 
+long getElapsedTimeMs() {
+  long oneMinute = 60*1000;
+
+  long hours = day * 24 + hour;
+  long minutes = hours * 60 + minute;
+
+  return minutes * oneMinute;
+}
+
 int main() {
 
   bool running = true;
 
   while (running) {
-    long oneMinute = 60*1000;
-
-    long hours = day * 24 + hour;
-    long minutes = hours * 60 + minute;
-
-    long  elapsedTimeMs = minutes * oneMinute;
+    long elapsedTimeMs = getElapsedTimeMs();
 
     char timeString[6];
     sprintf(timeString, "%02d:%02d", hour, minute);
