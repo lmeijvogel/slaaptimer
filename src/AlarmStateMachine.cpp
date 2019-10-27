@@ -9,9 +9,9 @@ struct AlarmTime {
   int minute;
 };
 
-const AlarmTime PREPARE_TIME = { 6, 45 };
-const AlarmTime ON_TIME = { 7, 15 };
-const AlarmTime OFF_TIME = { 8, 15 };
+const AlarmTime PREPARE_TIME = { 6, 30 };
+const AlarmTime ON_TIME = { 7, 0 };
+const AlarmTime OFF_TIME = { 8, 0 };
 
 class AlarmStateMachine {
   public:
