@@ -102,8 +102,12 @@ class Display {
       int high = 12;
 
       int currentHour = hour(time);
+      int currentMinute = minute(time);
 
-      if (currentHour < 7 || 19 <= currentHour) {
+      bool isStillNight = currentHour < 7;
+      bool isAlreadyEvening = 19 <= currentHour || (18 <= currentHour && 30 <= currentMinute);
+
+      if (isStillNight || isAlreadyEvening) {
         return low;
       } else {
         return high;
