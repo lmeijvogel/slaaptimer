@@ -31,6 +31,11 @@ class Display {
       uint8_t colonBitMask = (currentSecond & 1) << 6;
 
       int currentHour = hour(time);
+
+      if (currentHour > 12) {
+        currentHour -= 12;
+      }
+
       int currentMinute = minute(time);
 
       // show hours (no leading 0, with blinking colon)
