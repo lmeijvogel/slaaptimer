@@ -52,16 +52,12 @@ class AlarmStateMachine {
 
 
     bool largerThan(AlarmTime time, AlarmTime referenceTime) {
-      if (referenceTime.hour < time.hour) {
-        return true;
-      }
-
-      if (referenceTime.hour == time.hour && referenceTime.minute <= time.minute) {
-        return true;
-      }
-
-      return false;
+      return toMinutes(time) > toMinutes(referenceTime);
     }
 
     AlarmState::State state = AlarmState::State::Off;
+
+    int toMinutes(AlarmTime alarmTime) {
+      return (alarmTime.hour * 60) + alarmTime.minute;
+    }
 };
