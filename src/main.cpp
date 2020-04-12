@@ -25,6 +25,8 @@ std::string display(LightController *lightController) {
         return "Green    ";
       case Yellow:
         return "Yellow   ";
+      default:
+        return "-        ";
     }
   } else {
     return "-        ";
