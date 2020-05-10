@@ -24,17 +24,17 @@ class AlarmStateMachine {
     void setCurrentTime(int hour, int minute) {
       AlarmTime time = { hour, minute };
 
-      if (largerThan(time, OFF_TIME)) {
+      if (largerOrEqual(time, OFF_TIME)) {
         this->setState(AlarmState::State::Off);
         return;
       }
 
-      if (largerThan(time, ON_TIME)) {
+      if (largerOrEqual(time, ON_TIME)) {
         this->setState(AlarmState::State::On);
         return;
       }
 
-      if (largerThan(time, PREPARE_TIME)) {
+      if (largerOrEqual(time, PREPARE_TIME)) {
         this->setState(AlarmState::State::Prepare);
         return;
       }
@@ -51,8 +51,8 @@ class AlarmStateMachine {
     }
 
 
-    bool largerThan(AlarmTime time, AlarmTime referenceTime) {
-      return toMinutes(time) > toMinutes(referenceTime);
+    bool largerOrEqual(AlarmTime time, AlarmTime referenceTime) {
+      return toMinutes(time) >= toMinutes(referenceTime);
     }
 
     AlarmState::State state = AlarmState::State::Off;
