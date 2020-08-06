@@ -11,31 +11,11 @@ class RtcClock {
     }
 
     void checkRtcAndGetTime() {
-      if (!enableRtc) {
-        return;
-      }
+      this->checkRtcAndGetTime(true);
+    }
 
-      tmElements_t timeElements;
-
-      bool rtcOk = RTC.read(timeElements);
-
-      if (rtcOk) {
-        rtcStatus = RtcStatus::Status::OK;
-
-        setTime(makeTime(timeElements));
-      } else {
-        bool rtcPresent = RTC.chipPresent();
-
-        if (!rtcPresent) {
-          rtcStatus = RtcStatus::Status::Missing;
-
-          Serial.println("RTC not present!");
-        } else {
-          rtcStatus = RtcStatus::Status::NotRunning;
-
-          Serial.println("RTC not initialized!");
-        }
-      }
+    void checkRtcAndGetTimeUnlessErroneous() {
+      this->checkRtcAndGetTime(false);
     }
 
     void initializeTime(int hour, int minute, int second) {
@@ -54,6 +34,45 @@ class RtcClock {
 
 
   private:
+    void checkRtcAndGetTime(bool force) {
+      if (!enableRtc) {
+        return;
+      }
+
+      tmElements_t timeElements;
+
+      bool rtcOk = RTC.read(timeElements);
+
+      if (rtcOk) {
+        rtcStatus = RtcStatus::Status::OK;
+
+        // Do not change the current time if it's obviously wrong:
+        // I think sometimes the connection to the RTC is broken,
+        // which results in the clock being badly off (as in: more than one hour).
+        if (force || closeEnoughToSystemTime(timeElements)) {
+          setTime(makeTime(timeElements));
+        }
+      } else {
+        bool rtcPresent = RTC.chipPresent();
+
+        if (!rtcPresent) {
+          rtcStatus = RtcStatus::Status::Missing;
+
+          Serial.println("RTC not present!");
+        } else {
+          rtcStatus = RtcStatus::Status::NotRunning;
+
+          Serial.println("RTC not initialized!");
+        }
+      }
+    }
+
+    bool closeEnoughToSystemTime(tmElements_t &timeElements) {
+      time_t currentTime = now();
+
+      return (timeElements.Hour == hour(currentTime) && timeElements.Minute == minute(currentTime));
+    }
+
     bool enableRtc;
     RtcStatus::Status rtcStatus;
 };

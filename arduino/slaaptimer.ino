@@ -129,7 +129,7 @@ bool shouldSyncWithRtc(time_t currentTime) {
 void periodicSyncWithRtc(time_t currentTime) {
   if (shouldSyncWithRtc(currentTime)) {
     Serial.println("Performing periodic sync with RTC.");
-    rtcClock.checkRtcAndGetTime();
+    rtcClock.checkRtcAndGetTimeUnlessErroneous();
   }
 }
 
