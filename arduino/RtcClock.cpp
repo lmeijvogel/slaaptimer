@@ -32,6 +32,9 @@ class RtcClock {
       return this->rtcStatus;
     }
 
+    int getCalibration() {
+      return (int)RTC.getCalibration();
+    }
 
   private:
     void checkRtcAndGetTime(bool force) {

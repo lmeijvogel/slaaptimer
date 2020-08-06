@@ -83,7 +83,13 @@ void setup() {
   if (ENABLE_RTC) {
     rtcClock.checkRtcAndGetTime();
 
-    if (rtcClock.status() != RtcStatus::OK) {
+    if (rtcClock.status() == RtcStatus::OK) {
+      char rtcCalibrationMessage[40];
+
+      sprintf(rtcCalibrationMessage, "Current RTC calibration: %d", rtcClock.getCalibration());
+
+      Serial.println(rtcCalibrationMessage);
+    } else {
       display.showRtcError(rtcClock.status());
     }
   } else {
