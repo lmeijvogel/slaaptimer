@@ -103,7 +103,7 @@ void setup() {
 int lastRtcSyncMinute;
 int lastEchoedSecond;
 
-bool shouldSyncWithRtc(time_t currentTime) {
+bool shouldSyncWithRtc(time_t &currentTime) {
   if (!ENABLE_RTC) {
     return false;
   }
@@ -129,14 +129,14 @@ bool shouldSyncWithRtc(time_t currentTime) {
   return false;
 }
 
-void periodicSyncWithRtc(time_t currentTime) {
+void periodicSyncWithRtc(time_t &currentTime) {
   if (shouldSyncWithRtc(currentTime)) {
     Serial.println("Performing periodic sync with RTC.");
     rtcClock.checkRtcAndGetTimeUnlessErroneous();
   }
 }
 
-void periodicEchoCurrentTimeToSerial(time_t currentTime) {
+void periodicEchoCurrentTimeToSerial(time_t &currentTime) {
   if (shouldEchoCurrentTimeToSerial(currentTime)) {
     char message[30];
 
@@ -150,7 +150,7 @@ void periodicEchoCurrentTimeToSerial(time_t currentTime) {
   }
 }
 
-bool shouldEchoCurrentTimeToSerial(time_t currentTime) {
+bool shouldEchoCurrentTimeToSerial(time_t &currentTime) {
   int currentSecond = second(currentTime);
 
   if (lastEchoedSecond != currentSecond) {
