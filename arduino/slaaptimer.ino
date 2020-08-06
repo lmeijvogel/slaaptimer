@@ -62,6 +62,8 @@ Display display(&tm1637display);
 
 RtcClock rtcClock(ENABLE_RTC);
 
+bool shouldEchoCurrentTimeToSerial(time_t &currentTime);
+
 void setup() {
   Serial.begin(9600);
   Serial.println("Started");
@@ -99,6 +101,7 @@ void setup() {
 }
 
 int lastRtcSyncMinute;
+int lastEchoedSecond;
 
 bool shouldSyncWithRtc(time_t currentTime) {
   if (!ENABLE_RTC) {
@@ -133,6 +136,32 @@ void periodicSyncWithRtc(time_t currentTime) {
   }
 }
 
+void periodicEchoCurrentTimeToSerial(time_t currentTime) {
+  if (shouldEchoCurrentTimeToSerial(currentTime)) {
+    char message[30];
+
+    int currentHour = hour(currentTime);
+    int currentMinute = minute(currentTime);
+    int currentSecond = second(currentTime);
+
+    sprintf(message, "Current time: %02d:%02d:%02d", currentHour, currentMinute, currentSecond);
+
+    Serial.println(message);
+  }
+}
+
+bool shouldEchoCurrentTimeToSerial(time_t currentTime) {
+  int currentSecond = second(currentTime);
+
+  if (lastEchoedSecond != currentSecond) {
+    lastEchoedSecond = currentSecond;
+
+    return true;
+  }
+
+  return false;
+}
+
 void loop() {
   if (rtcClock.status() == RtcStatus::Status::Unknown) {
     rtcClock.checkRtcAndGetTime();
@@ -151,6 +180,8 @@ void loop() {
   int currentMinute = minute(currentTime);
 
   periodicSyncWithRtc(currentTime);
+
+  periodicEchoCurrentTimeToSerial(currentTime);
 
   alarmStateMachine.setCurrentTime(currentHour, currentMinute);
 
