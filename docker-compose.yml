@@ -1,0 +1,7 @@
+services:
+  arduino:
+    build: .
+    volumes:
+      - .:/app
+    devices:
+      - /dev/ttyUSB0
